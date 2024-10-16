@@ -1,11 +1,22 @@
-This is just a base initialization of the hyperledger besu network using 4 nodes and QBFT in a single server.
-
-
-generate-network-docker-compose.yml - generates networkFiles which contains configuration for genesis block and public and private keys based on qbftConfigFile.json .(as of now a sample structure is provided, if needed run docker compose -f generate-network-docker-compose.yml up -d )
 
 
 
-start-network-docker-compose.yml - starts the network consisting of 4 nodes which one node is boot-node to establish connect between peers.
+This is just a base initialization of the Hyperledger Besu network using 4 nodes and QBFT on a single server.
 
-To start the network - docker compose -f start-network-docker-compose.yml up -d
-To stop the network - docker compose -f start-network-docker-compose.yml down -d
+generate-network-docker-compose.yml:
+Generates networkFiles, which contain configuration for the genesis block, as well as public and private keys for each node based on qbftConfigFile.json.
+(As of now, a sample structure is provided. If needed, run the following command to regenerate the files):
+
+
+docker compose -f generate-network-docker-compose.yml up -d
+start-network-docker-compose.yml:
+Starts the network consisting of 4 nodes, with one node acting as a boot node to establish connections between peers.
+
+To start the network, run:
+
+
+docker compose -f start-network-docker-compose.yml up -d
+
+To stop the network, run:
+
+docker compose -f start-network-docker-compose.yml down -d

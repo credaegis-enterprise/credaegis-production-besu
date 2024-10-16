@@ -1,0 +1,8 @@
+
+node-*/data/*
+boot-node/data/*
+networkFiles/*
+!node-*/data/key
+!node-*/data/key.pub
+!boot-node/data/key
+!boot-node/data/key.pub

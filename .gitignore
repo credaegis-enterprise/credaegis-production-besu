@@ -6,3 +6,21 @@ networkFiles/*
 !node-*/data/key.pub
 !boot-node/data/key
 !boot-node/data/key.pub
+
+node_modules
+.env
+
+# Hardhat files
+/cache
+/artifacts
+
+# TypeChain files
+/typechain
+/typechain-types
+
+# solidity-coverage files
+/coverage
+/coverage.json
+
+# Hardhat Ignition default folder for deployments against a local node
+ignition/deployments/chain-31337

@@ -4,13 +4,49 @@ const { ethers } = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider("http://localhost:8001");  // Use your actual QBFT node URL
 
 // Define the contract address (hardcoded)
-const contractAddress = '0xAa588d3737B611baFD7bD713445b314BD453a5C8';  // Replace with your actual deployed contract address
+const contractAddress = '0xf204a4Ef082f5c04bB89F7D5E6568B796096735a';  // Replace with your actual deployed contract address
 
-// Define the ABI of the contract
+// Define the ABI of the contract with updated functions and events
 const contractABI = [
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
   {
     "anonymous": false,
     "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "batchId",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "id",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "message",
+        "type": "string"
+      }
+    ],
+    "name": "HashRevoked",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "uint256",
+        "name": "batchId",
+        "type": "uint256"
+      },
       {
         "indexed": true,
         "internalType": "uint256",
@@ -30,48 +66,28 @@ const contractABI = [
         "type": "string"
       }
     ],
-    "name": "HashRetrieved",
+    "name": "HashStored",
     "type": "event"
   },
   {
-    "anonymous": false,
     "inputs": [
       {
-        "indexed": true,
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "bool",
-        "name": "isVerified",
-        "type": "bool"
-      },
-      {
-        "indexed": false,
         "internalType": "string",
-        "name": "message",
+        "name": "hash",
         "type": "string"
       }
     ],
-    "name": "HashVerified",
-    "type": "event"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      }
-    ],
-    "name": "getHash",
+    "name": "getHashByValue",
     "outputs": [
       {
         "internalType": "string",
         "name": "",
         "type": "string"
+      },
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -80,14 +96,22 @@ const contractABI = [
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "id",
-        "type": "uint256"
-      },
+        "internalType": "string[]",
+        "name": "hashesToRevoke",
+        "type": "string[]"
+      }
+    ],
+    "name": "revokeHashes",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
       {
-        "internalType": "string",
-        "name": "hash",
-        "type": "string"
+        "internalType": "string[]",
+        "name": "hashes",
+        "type": "string[]"
       }
     ],
     "name": "storeHash",
@@ -96,33 +120,29 @@ const contractABI = [
     "type": "function"
   },
   {
-  "inputs": [
-    {
-      "internalType": "uint256",
-      "name": "id",
-      "type": "uint256"
-    },
-    {
-      "internalType": "string",
-      "name": "hashToVerify",
-      "type": "string"
-    }
-  ],
-  "name": "verifyHash",
-  "outputs": [
-    {
-      "internalType": "bool",
-      "name": "",
-      "type": "bool"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-}
-
-  
-
-
+    "inputs": [
+      {
+        "internalType": "string[]",
+        "name": "hashesToVerify",
+        "type": "string[]"
+      }
+    ],
+    "name": "verifyHashesByValue",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
+      },
+      {
+        "internalType": "bool[]",
+        "name": "",
+        "type": "bool[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
 ];
 
 // Define your private key (hardcoded)
@@ -134,38 +154,67 @@ const signer = new ethers.Wallet(privateKey, provider);
 // Create a contract instance
 const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-// Function to store the hash value
-async function storeHashValue(id,hashValue) {
-    try {
-        // Call the contract's function to store the hash
-        const tx = await contract.storeHash(id,hashValue);  // Replace `storeHash` with your actual function name
-        await tx.wait();  // Wait for the transaction to be mined
-        console.log('Hash stored successfully:', hashValue);
-    } catch (error) {
-        console.error('Error storing hash:', error);
-    }
+// Function to store an array of hash values
+async function storeHashValues(hashes) {
+  try {
+    const tx = await contract.storeHash(hashes);
+    await tx.wait();  // Wait for the transaction to be mined
+    console.log('Hashes stored successfully:', hashes);
+  } catch (error) {
+    console.error('Error storing hashes:', error);
+  }
 }
 
-async function verifyHash(id, hashToVerify) {
-    try {
-        const isVerified = await contract.verifyHash(id, hashToVerify);
-        console.log('Is hash verified?', isVerified);
-    } catch (error) {
-        console.error('Error verifying hash:', error);
-    }
-}
-async function retrieveHash(id) {
-    try {
-        const storedHash = await contract.getHash(id);
-        console.log('Retrieved hash:', storedHash);
-        return storedHash;
-    } catch (error) {
-        console.error('Error retrieving hash:', error);
-    }
+// Function to revoke an array of hashes
+async function revokeHashes(hashesToRevoke) {
+  try {
+    const tx = await contract.revokeHashes(hashesToRevoke);
+    await tx.wait();  // Wait for the transaction to be mined
+    console.log('Hashes revoked successfully:', hashesToRevoke);
+  } catch (error) {
+    console.error('Error revoking hashes:', error);
+  }
 }
 
-// Example usage: Replace with the actual hash value you want to store
-const hashToStore = '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c8b1';  // Replace with your actual hash value
-idTostore=1;
-retrieveHash(idTostore);
-verifyHash(idTostore,hashToStore);
+// Function to retrieve a hash and Merkle root by hash value
+async function getHashByValue(hash) {
+  try {
+    const [retrievedHash, merkleRoot] = await contract.getHashByValue(hash);
+    console.log('Retrieved hash:', retrievedHash);
+    console.log('Merkle root:', merkleRoot);
+    return { retrievedHash, merkleRoot };
+  } catch (error) {
+    console.error('Error retrieving hash:', error);
+  }
+}
+
+// Function to verify multiple hashes
+async function verifyHashesByValue(hashesToVerify) {
+  try {
+    const [verifiedHashes, verificationResults] = await contract.verifyHashesByValue(hashesToVerify);
+    console.log('Verified hashes:', verifiedHashes);
+    console.log('Verification results:', verificationResults);
+    return { verifiedHashes, verificationResults };
+  } catch (error) {
+    console.error('Error verifying hashes:', error);
+  }
+}
+
+// Example usage
+const hashes = [
+  '0x4c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c111',
+  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c777',
+];
+const hashesToRevoke = ['0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c777'];
+
+// Uncomment to store hashes
+storeHashValues(hashes);
+
+// Revoke a batch of hashes
+revokeHashes(hashesToRevoke);
+
+// Retrieve a hash and Merkle root by value
+getHashByValue(hashes[0]);
+
+// Verify multiple hashes
+verifyHashesByValue(hashes);

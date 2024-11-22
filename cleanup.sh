@@ -1,8 +1,8 @@
 DATA_DIRS=(
-    "/home/hridya/besu-credaegis/boot-node/data"
-    "/home/hridya/besu-credaegis/node-1/data"
-    "/home/hridya/besu-credaegis/node-2/data"
-    "/home/hridya/besu-credaegis/node-3/data"
+    "\\wsl.localhost\Ubuntu\home\anuroop_dev\sm\credaegis-smartcontract-demo-\boot-node\data"
+    "\\wsl.localhost\Ubuntu\home\anuroop_dev\sm\credaegis-smartcontract-demo-\node-1\data"
+    "\\wsl.localhost\Ubuntu\home\anuroop_dev\sm\credaegis-smartcontract-demo-\node-2\data"
+    "\\wsl.localhost\Ubuntu\home\anuroop_dev\sm\credaegis-smartcontract-demo-\node-3\data"
 )
 
 for DATA_DIR in "${DATA_DIRS[@]}"; do

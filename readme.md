@@ -1,3 +1,9 @@
+readme
+------
+
+**To initialise the network on new system, run:**
+
+ npx hardhat --network qbft
 
 
 
@@ -21,3 +27,22 @@ docker compose -f start-network-docker-compose.yml up -d
 **To stop the network, run:**
 
 docker compose -f start-network-docker-compose.yml down -d
+
+**To deploy scripts at after making changes in smart contract, run:**
+
+ npx hardhat run scripts/deploy.js --network qbft
+
+HERE, THE CONTRACT WILL BE DEPLOYED TO NEW ADDRESS
+SO, CHANGE THE CONTRACT ADRESS IN *interact.js*
+
+Also modify the ABI in interact.js with the new ABI generated in **~artifacts/contracts/HashStore.sol/HashStore.json**
+
+**To run functions in the *hashstore.sol* run:**
+ 
+ node interact.js
+
+*comment out functions that you don't wish to run*
+
+
+**code the private key to .env file and invoke it to .js later**
+

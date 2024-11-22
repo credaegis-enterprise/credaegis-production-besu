@@ -19,7 +19,10 @@ contract HashStore {
    
 
     event HashStored(uint256 indexed batchId, uint256 indexed id, string hash, string message);
-    event HashRevoked(uint256 indexed batchId, uint256 indexed id, string message);
+    //event HashRevoked(uint256 indexed batchId, uint256 indexed id, string message, string rev);
+    event HashRevoked(string hash, bool rev);
+
+
 
     address private owner;
 
@@ -33,48 +36,104 @@ contract HashStore {
         owner = msg.sender;
     }
 
-    // Function to store hashes by taking input hashes as array
-    function storeHash(string[] memory hashes) public {
-        for (uint256 i = 0; i < hashes.length; i++) {
-            if (currentHashCount == BATCH_SIZE) {
-                currentBatch++;  // Move to the next batch
-                currentHashCount = 0;
-            }
+    // Define a struct for the return type
+struct StoreResult {
+    string Hash;
+    bool stored;
+}
 
-            // Store the hash in the current batch
-            batches[currentBatch].hashes.push(hashes[i]);
-            emit HashStored(currentBatch, currentHashCount, hashes[i], "Hash stored successfully.");
+// Function to store hashes by taking input hashes as array and returns array of objects
+function storeHash(string[] memory hashes) public returns (StoreResult[] memory) {
+    uint256 length = hashes.length;
+    StoreResult[] memory results = new StoreResult[](length);
 
-            // Update hash lookup mappings
-            hashToBatchId[hashes[i]] = currentBatch;
-            hashToId[hashes[i]] = currentHashCount;
+    for (uint256 i = 0; i < length; i++) {
+        if (currentHashCount == BATCH_SIZE) {
+            currentBatch++; // Move to the next batch
+            currentHashCount = 0;
+        }
 
-            currentHashCount++;
+        // Store the hash in the current batch
+        batches[currentBatch].hashes.push(hashes[i]);
+        emit HashStored(currentBatch, currentHashCount, hashes[i], "Hash stored successfully.");
 
-            // Update Merkle root for the current batch when it's full
-            if (currentHashCount == BATCH_SIZE) {
-                batches[currentBatch].merkleRoot = calculateMerkleRoot(batches[currentBatch].hashes);
-            }
+        // Update hash lookup mappings
+        hashToBatchId[hashes[i]] = currentBatch;
+        hashToId[hashes[i]] = currentHashCount;
+
+        // Populate the result struct
+        results[i] = StoreResult({
+            Hash: hashes[i],
+            stored: true
+        });
+
+        currentHashCount++;
+
+        // Update Merkle root for the current batch when it's full
+        if (currentHashCount == BATCH_SIZE) {
+            batches[currentBatch].merkleRoot = calculateMerkleRoot(batches[currentBatch].hashes);
         }
     }
 
+    return results;
+}
 
 
-   // Function to revoke hashes by flagging them as revoked
-   function revokeHashes(string[] memory hashesToRevoke) public onlyOwner {
-        for (uint256 i = 0; i < hashesToRevoke.length; i++) {
-            string memory hashToRevoke = hashesToRevoke[i];
-            uint256 batchId = hashToBatchId[hashToRevoke];
-            uint256 id = hashToId[hashToRevoke];
 
-            require(batchId <= currentBatch, "Invalid batch ID.");
-            require(id < batches[batchId].hashes.length, "Invalid ID in batch.");
+// Define a struct to store the result of each revocation attempt
+struct RevokeResult {
+    string hash;      // The hash being revoked
+    bool stat;     // A flag indicating if the hash was successfully revoked
+}
 
-            // Revoke the hash and emit event
-            batches[batchId].revoked[id] = true;
-            emit HashRevoked(batchId, id, "Hash revoked successfully.");
-        }
+// Function to revoke hashes by flagging them as revoked and returning an array of objects
+function revokeHashes(string[] memory hashesToRevoke) public onlyOwner returns (RevokeResult[] memory) 
+{
+    uint256 length = hashesToRevoke.length;
+    RevokeResult[] memory results = new RevokeResult[](length);
+
+    
+
+    for (uint256 i = 0; i < length; i++) {
+        string memory hashToRevoke = hashesToRevoke[i];
+        uint256 batchId = hashToBatchId[hashToRevoke];  // Map the hash to its batch ID
+        uint256 id = hashToId[hashToRevoke];           // Map the hash to its id in the batch
+        //bool isRevoked = 0;
+        bool stat= false;                     // Default revocation status
+
+        // Check if the batch ID and index are valid
+        if (batchId <= currentBatch && id < batches[batchId].hashes.length) {
+            // Revoke the hash if it exists and is not already revoked
+            if (!batches[batchId].revoked[id]) 
+            {
+                batches[batchId].revoked[id] = true;    // Mark the hash as revoked
+                //isRevoked = true;     
+                stat = true;                 // Update revocation status
+                emit HashRevoked(hashToRevoke,stat); // Emit revocation event
+                
+                
+            } else
+             {
+                emit HashRevoked(hashToRevoke,stat); // Emit failure event for already revoked hash
+            }
+        } else 
+            {
+            emit HashRevoked(hashToRevoke,stat); // Emit failure event for invalid hash
+            }
+
+        // Populate the result struct with the hash and its revocation status
+        results[i] = RevokeResult({
+            hash: hashToRevoke,
+            stat: stat
+        });
+        
     }
+
+    return results;  // Return the array of results
+}
+
+
+
 
     // need to work on logic of this function to getting the merkle root
     // Function to get merkle root to be pushed into Avalanche
@@ -87,40 +146,53 @@ contract HashStore {
 
         bytes32 merkleRoot = batches[batchId].merkleRoot;
 
-        // *old* return (batchId, id, hash, merkleRoot);
 
         return (hash, merkleRoot);
     }
 
 
 
-    // Function to verify an array of hashes for bulk verification
-    function verifyHashesByValue(string[] memory hashesToVerify) public view returns (string[] memory, bool[] memory) {
-        uint256 length = hashesToVerify.length;
-        bool[] memory verificationResults = new bool[](length);
-        string[] memory verifiedHashes = new string[](length);
 
-        for (uint256 i = 0; i < length; i++) {
-            string memory hashToVerify = hashesToVerify[i];
-            uint256 batchId = hashToBatchId[hashToVerify];
-            uint256 id = hashToId[hashToVerify];
-            
-            if (id < batches[batchId].hashes.length && !batches[batchId].revoked[id]) {
-                string memory storedHash = batches[batchId].hashes[id];
-                if (keccak256(abi.encodePacked(storedHash)) == keccak256(abi.encodePacked(hashToVerify))) {
-                    verificationResults[i] = true;
-                    verifiedHashes[i] = hashToVerify;
-                } else {
-                    verificationResults[i] = false;
-                }
-            } else {
-                verificationResults[i] = false;
+
+    // Define a struct for the return type
+struct VerificationResult {
+    string verifiedHashes;
+    bool verificationResults;
+}
+
+// Function to verify an array of hashes for bulk verification
+function verifyHashesByValue(string[] memory hashesToVerify) 
+    public 
+    view 
+    returns (VerificationResult[] memory) 
+{
+    uint256 length = hashesToVerify.length;
+    VerificationResult[] memory results = new VerificationResult[](length);
+
+    for (uint256 i = 0; i < length; i++) {
+        string memory hashToVerify = hashesToVerify[i];
+        uint256 batchId = hashToBatchId[hashToVerify];
+        uint256 id = hashToId[hashToVerify];
+        bool isVerified = false;
+
+        if (id < batches[batchId].hashes.length && !batches[batchId].revoked[id]) {
+            string memory storedHash = batches[batchId].hashes[id];
+            if (keccak256(abi.encodePacked(storedHash)) == keccak256(abi.encodePacked(hashToVerify))) {
+                isVerified = true;
             }
         }
 
-        return (verifiedHashes, verificationResults);
+        // Populate the result struct
+        results[i] = VerificationResult({
+            verifiedHashes: hashToVerify,
+            verificationResults: isVerified
+        });
     }
 
+    return results;
+}
+
+    
 
 
     

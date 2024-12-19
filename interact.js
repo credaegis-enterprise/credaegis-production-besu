@@ -4,7 +4,7 @@ const { ethers } = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider("http://localhost:8001");  // Use your actual QBFT node URL
 
 // Define the contract address (hardcoded)
-const contractAddress = '0xE53A3Bac98c9D304a3bB6Ce34ed37923BC25117a';  // Replace with your actual deployed contract address
+const contractAddress = '0x96a08824f87070075262dbce23C6bAbffDCa0493';  // Replace with your actual deployed contract address
 
 // Define the ABI of the contract with updated functions and events
 const contractABI = [
@@ -12,31 +12,6 @@ const contractABI = [
     "inputs": [],
     "stateMutability": "nonpayable",
     "type": "constructor"
-  },
-  {
-    "anonymous": false,
-    "inputs": [
-      {
-        "indexed": false,
-        "internalType": "string",
-        "name": "hash",
-        "type": "string"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "batchId",
-        "type": "uint256"
-      },
-      {
-        "indexed": false,
-        "internalType": "uint256",
-        "name": "storedBatchId",
-        "type": "uint256"
-      }
-    ],
-    "name": "DebugHashStorage",
-    "type": "event"
   },
   {
     "anonymous": false,

@@ -191,12 +191,6 @@ const signer = new ethers.Wallet(privateKey, provider);
 // Create a contract instance
 const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
-contract.on('DebugHashStorage', (hash, batchId, storedBatchId) => {
-  console.log("Hash: ", hash);
-  console.log("BatchId (Current): ", batchId.toString());
-  console.log("Stored BatchId: ", storedBatchId.toString());
-});
-
 
 //Function to store array of hashes and display array of objects
 async function storeHashes(hashes) {

@@ -11,7 +11,7 @@ contract HashStore {
     mapping(uint256 => Batch) private batches;
     mapping(string => uint256) private hashToBatchId;
     mapping(string => uint256) private hashToId;
-    uint256 private currentBatch;
+    uint256 private currentBatch = 1; //batch id is numbered from 1 rather than starting from 0
     uint256 private currentHashCount;
 
     uint256 constant BATCH_SIZE = 5; //change this number to whatever you like to be the batch size
@@ -21,7 +21,6 @@ contract HashStore {
     event HashStored(uint256 indexed batchId, uint256 indexed id, string hash, string message);
     //event HashRevoked(uint256 indexed batchId, uint256 indexed id, string message, string rev);
     event HashRevoked(string hash, bool rev);
-
 
 
     address private owner;
@@ -48,35 +47,55 @@ function storeHash(string[] memory hashes) public returns (StoreResult[] memory)
     StoreResult[] memory results = new StoreResult[](length);
 
     for (uint256 i = 0; i < length; i++) {
+        bool alreadyStored = false;
+
+        // Check if hash exists in any previous batch by looking at hashToBatchId
+        uint256 batchId = hashToBatchId[hashes[i]];
+
+        if (batchId != 0) {
+            alreadyStored = true; // The hash already exists in a batch
+        }
+
+        if (alreadyStored) {
+            results[i] = StoreResult({
+                Hash: hashes[i],
+                stored: false // Already stored, do not store it again
+            });
+            continue; // Skip storing this hash again
+        }
+
+        // Check if we need to move to a new batch when the current batch is full
         if (currentHashCount == BATCH_SIZE) {
-            currentBatch++; // Move to the next batch
-            currentHashCount = 0;
+            currentBatch++; // Increment to next batch
+            currentHashCount = 0; // Reset count for the new batch
         }
 
         // Store the hash in the current batch
         batches[currentBatch].hashes.push(hashes[i]);
         emit HashStored(currentBatch, currentHashCount, hashes[i], "Hash stored successfully.");
 
-        // Update hash lookup mappings
+        // Update mappings
         hashToBatchId[hashes[i]] = currentBatch;
         hashToId[hashes[i]] = currentHashCount;
 
-        // Populate the result struct
+        // Store the result for that hash
         results[i] = StoreResult({
             Hash: hashes[i],
             stored: true
         });
 
+        // Increment the current count for this batch
         currentHashCount++;
 
-        // Update Merkle root for the current batch when it's full
+        // Once the batch is full, calculate the Merkle root
         if (currentHashCount == BATCH_SIZE) {
             batches[currentBatch].merkleRoot = calculateMerkleRoot(batches[currentBatch].hashes);
         }
     }
 
-    return results;
+    return results; // Return the result for each hash processed
 }
+
 
 
 

@@ -4,7 +4,7 @@ const { ethers } = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider("http://localhost:8001");  // Use your actual QBFT node URL
 
 // Define the contract address (hardcoded)
-const contractAddress = '0xE28158eCFde143e2536761c3254C7C31efd97271';  // Replace with your actual deployed contract address
+const contractAddress = '0xE53A3Bac98c9D304a3bB6Ce34ed37923BC25117a';  // Replace with your actual deployed contract address
 
 // Define the ABI of the contract with updated functions and events
 const contractABI = [
@@ -12,6 +12,31 @@ const contractABI = [
     "inputs": [],
     "stateMutability": "nonpayable",
     "type": "constructor"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "string",
+        "name": "hash",
+        "type": "string"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "batchId",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "storedBatchId",
+        "type": "uint256"
+      }
+    ],
+    "name": "DebugHashStorage",
+    "type": "event"
   },
   {
     "anonymous": false,
@@ -191,6 +216,12 @@ const signer = new ethers.Wallet(privateKey, provider);
 // Create a contract instance
 const contract = new ethers.Contract(contractAddress, contractABI, signer);
 
+contract.on('DebugHashStorage', (hash, batchId, storedBatchId) => {
+  console.log("Hash: ", hash);
+  console.log("BatchId (Current): ", batchId.toString());
+  console.log("Stored BatchId: ", storedBatchId.toString());
+});
+
 
 //Function to store array of hashes and display array of objects
 async function storeHashes(hashes) {
@@ -215,6 +246,8 @@ async function storeHashes(hashes) {
     throw error;
   }
 }
+
+
 
 
 // Function to revoke an array of hashes and display results as an array of objects
@@ -283,15 +316,18 @@ async function verifyHashes(hashesToVerify) {
 
 // Example usage
 const hashes = [
-  '0x4c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c114',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c777',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c771',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c772',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c773',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c774',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c775',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c776',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c778'
+  '0x4c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c114',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c777',
+  '0x5c6ee2f9e5d536b5633a9f58f91c9f66f1f19cfa0a51c771',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c772',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c773',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c774',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c775',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c776',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c778',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c811',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c812',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c813'
 ];
 const hashesToRevoke = ['0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c774',
   '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c775',
@@ -300,12 +336,12 @@ const hashesToRevoke = ['0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19
 ];
 
 // Uncomment to store hashes
-//storeHashes(hashes);
+storeHashes(hashes);
 
 
 // Revoke a batch of hashes
 //final runnning
-revokeHashes(hashesToRevoke);
+//revokeHashes(hashesToRevoke);
   
   
 // Retrieve a hash and Merkle root by value

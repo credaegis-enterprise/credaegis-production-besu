@@ -4,7 +4,7 @@ const { ethers } = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider("http://localhost:8001");  // Use your actual QBFT node URL
 
 // Define the contract address (hardcoded)
-const contractAddress = '0x96a08824f87070075262dbce23C6bAbffDCa0493';  // Replace with your actual deployed contract address
+const contractAddress = '0xaA79f17eD8A1326Eb5F13873586a60597c495dD7';  // Replace with your actual deployed contract address
 
 // Define the ABI of the contract with updated functions and events
 const contractABI = [
@@ -170,6 +170,11 @@ const contractABI = [
             "internalType": "bool",
             "name": "verificationResults",
             "type": "bool"
+          },
+          {
+            "internalType": "bool",
+            "name": "revoked",
+            "type": "bool"
           }
         ],
         "internalType": "struct HashStore.VerificationResult[]",
@@ -276,6 +281,8 @@ async function verifyHashes(hashesToVerify) {
     const formattedResults = results.map(result => ({
         verifiedHashes: result.verifiedHashes,
         verificationResults: result.verificationResults,
+        revokedStatus: result.revoked
+
     }));
 
     console.log("Verified hashes and results:", formattedResults);
@@ -298,11 +305,7 @@ const hashes = [
   '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c812',
   '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c813'
 ];
-const hashesToRevoke = ['0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c774',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c775',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c776',
-  '0x5c6ee2f9e5d536b563fcfdb00fb218eec33a9f58f91c9f66f1f19cfa0a51c778'
-];
+const hashesToRevoke = ['0x4c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c114'];
 
 // Uncomment to store hashes
 storeHashes(hashes);
@@ -310,11 +313,11 @@ storeHashes(hashes);
 
 // Revoke a batch of hashes
 //final runnning
-//revokeHashes(hashesToRevoke);
+revokeHashes(hashesToRevoke);
   
   
 // Retrieve a hash and Merkle root by value
-//getHashByValue(hashes[0]);
+getHashByValue(hashes[0]);
 
 // Verify multiple hashes
-//verifyHashes(hashes);
+verifyHashes(hashes);

@@ -177,6 +177,7 @@ function revokeHashes(string[] memory hashesToRevoke) public onlyOwner returns (
 struct VerificationResult {
     string verifiedHashes;
     bool verificationResults;
+    bool revoked;
 }
 
 // Function to verify an array of hashes for bulk verification
@@ -193,9 +194,14 @@ function verifyHashesByValue(string[] memory hashesToVerify)
         uint256 batchId = hashToBatchId[hashToVerify];
         uint256 id = hashToId[hashToVerify];
         bool isVerified = false;
+        bool isrevoked = false;
+        isrevoked = batches[batchId].revoked[id];
+
+
 
         if (id < batches[batchId].hashes.length && !batches[batchId].revoked[id]) {
             string memory storedHash = batches[batchId].hashes[id];
+            //isrevoked = batches[batchId].revoked[id];
             if (keccak256(abi.encodePacked(storedHash)) == keccak256(abi.encodePacked(hashToVerify))) {
                 isVerified = true;
             }
@@ -204,7 +210,8 @@ function verifyHashesByValue(string[] memory hashesToVerify)
         // Populate the result struct
         results[i] = VerificationResult({
             verifiedHashes: hashToVerify,
-            verificationResults: isVerified
+            verificationResults: isVerified,
+            revoked: isrevoked
         });
     }
 

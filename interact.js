@@ -4,7 +4,7 @@ const { ethers } = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider("http://localhost:8001");  // Use your actual QBFT node URL
 
 // Define the contract address (hardcoded)
-const contractAddress = '0xaA79f17eD8A1326Eb5F13873586a60597c495dD7';  // Replace with your actual deployed contract address
+const contractAddress = '0xe2d92c37Fd34f94e4633371db85a91D16c2dc3F5';  // Replace with your actual deployed contract address
 
 // Define the ABI of the contract with updated functions and events
 const contractABI = [
@@ -67,21 +67,106 @@ const contractABI = [
     "inputs": [
       {
         "internalType": "string",
-        "name": "hash",
+        "name": "merkleroot",
         "type": "string"
       }
     ],
-    "name": "getHashByValue",
+    "name": "finaliseBatch",
     "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "",
+        "type": "bool"
+      }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getAllMerkleRoot",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "roots",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct HashStore.allMerkleRoot[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "batchId",
+        "type": "uint256"
+      }
+    ],
+    "name": "getBatchById",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
+      },
       {
         "internalType": "string",
         "name": "",
         "type": "string"
       },
       {
-        "internalType": "bytes32",
+        "internalType": "uint256",
         "name": "",
-        "type": "bytes32"
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getContractDetails",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "getHashesForNextBatch",
+    "outputs": [
+      {
+        "internalType": "string[]",
+        "name": "",
+        "type": "string[]"
       }
     ],
     "stateMutability": "view",
@@ -175,6 +260,11 @@ const contractABI = [
             "internalType": "bool",
             "name": "revoked",
             "type": "bool"
+          },
+          {
+            "internalType": "string",
+            "name": "merkleRoot",
+            "type": "string"
           }
         ],
         "internalType": "struct HashStore.VerificationResult[]",
@@ -259,20 +349,6 @@ async function revokeHashes(hashesToRevoke) {
 
 
 
-// Function to retrieve a hash and Merkle root by hash value
-async function getHashByValue(hash) {
-  try {
-    const [retrievedHash, merkleRoot] = await contract.getHashByValue(hash);
-    console.log('Retrieved hash:', retrievedHash);
-    console.log('Merkle root:', merkleRoot);
-    return { retrievedHash, merkleRoot };
-  } catch (error) {
-    console.error('Error retrieving hash:', error);
-  }
-}
-
-
-
 //Function to verify array of hashes and display array of objects
 async function verifyHashes(hashesToVerify) {
     const results = await contract.verifyHashesByValue(hashesToVerify);
@@ -281,11 +357,125 @@ async function verifyHashes(hashesToVerify) {
     const formattedResults = results.map(result => ({
         verifiedHashes: result.verifiedHashes,
         verificationResults: result.verificationResults,
-        revokedStatus: result.revoked
+        revokedStatus: result.revoked,
+        merkleRoot: result.merkleRoot
 
     }));
 
     console.log("Verified hashes and results:", formattedResults);
+}
+
+
+// Function to get the hashes for the next batch and display an array of results
+async function getHashesForNextBatch() {
+  // Call the contract method to get the hashes
+  const hashes = await contract.getHashesForNextBatch();
+
+  // Check if hashes are returned
+  if (hashes && hashes.length > 0) {
+      // Transform the results into the desired format (if needed, you can customize this)
+      const formattedResults = hashes.map(hash => ({
+          hash: hash,
+          //status: "Hash retrieved successfully"  // Or any status or additional information you need
+      }));
+
+      console.log("Fetched hashes for next batch:", formattedResults);
+  } else {
+      console.log("No new hashes found for the next batch.");
+  }
+}
+
+
+
+
+
+// Function to finalise the batch and display the batch number and status
+async function finaliseBatch(merkleroot) {
+  try {
+    // Call the finaliseBatch function to change the state
+    const tx = await contract.finaliseBatch(merkleroot);
+    
+    // Wait for the transaction to be mined
+    await tx.wait();
+
+    // Now use callStatic to retrieve the return values without changing the state
+    const result = await contract.callStatic.finaliseBatch(merkleroot);
+
+    // Destructure the returned values
+    const [batchNumber, status] = result;
+
+    // Check if values are defined
+    if (batchNumber === undefined || status === undefined) {
+        throw new Error("Received undefined values from the contract.");
+    }
+
+
+    // Display the results
+    console.log(`Batch Number: ${batchNumber.toString()}`);
+    console.log(`Status: ${status}`);
+} catch (error) {
+    console.error("Error executing function:", error);
+}
+}
+
+
+// Function to fetch all Merkle roots
+async function fetchMerkleRoots() {
+  try {
+    const merkleRoots = await contract.getAllMerkleRoot();
+
+    // Format the results as an array of objects with "Batch N" keys
+    const formattedResult = merkleRoots.map((result, index) => ({
+      [`Batch ${index + 1}`]: result.roots,
+    }));
+
+    console.log("Hashes stored successfully:");
+    console.log(formattedResult);
+  } catch (error) {
+    console.error("Error in fetching Merkle roots:", error);
+  }
+}
+
+
+
+
+
+
+
+//debugging--------------------------------------------------------------------
+
+
+async function fetchContractDetails() {
+  try {
+      // Connect to the contract
+      //const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet);
+
+      // Call the Solidity function
+      const [batchHashCount, currentBatch, lastHashIndex] = await contract.getContractDetails();
+
+      console.log("Batch Hash Count:", batchHashCount.toString());
+      console.log("Current Batch:", currentBatch.toString());
+      console.log("Last Hash Index:", lastHashIndex.toString());
+  } catch (error) {
+      console.error("Error fetching contract details:", error);
+  }
+}
+
+
+async function fetchBatchDetails(batchId) {
+  try {
+
+      // Call the Solidity function with the batch ID
+      const [hashes, merkleRoot, lastHashIndex] = await contract.getBatchById(batchId);
+
+      // Display batch details
+      console.log(`Batch ID: ${batchId}`);
+      console.log("Hashes:", hashes);
+      console.log("Merkle Root:", merkleRoot);
+      console.log("Last Hash Index:", lastHashIndex.toString());
+  } catch (error) {
+      console.error("Error fetching batch details:", error);
+  }
 }
 
 
@@ -303,21 +493,108 @@ const hashes = [
   '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c778',
   '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c811',
   '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c812',
-  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c813'
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c813',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c814',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c815',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c816',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c817',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c818',
+  '0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c819'
+
 ];
-const hashesToRevoke = ['0x4c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c114'];
+const hashesToRevoke = ['0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c811'];
+
+const merkleroot = "0x15450";
+
+const batchId = 1; // Replace with desired batch ID
+
+
+
 
 // Uncomment to store hashes
 storeHashes(hashes);
 
 
 // Revoke a batch of hashes
-//final runnning
-revokeHashes(hashesToRevoke);
-  
-  
-// Retrieve a hash and Merkle root by value
-getHashByValue(hashes[0]);
+//revokeHashes(hashesToRevoke);
 
 // Verify multiple hashes
-verifyHashes(hashes);
+//verifyHashes(hashes);
+
+// To calculate merkle root for the batch 
+//getHashesForNextBatch();
+
+// To finalise the batch with sending merkle root in order to push merkle root to AVALANCHE
+//finaliseBatch(merkleroot);
+
+// To fetch all merkle roots
+//fetchMerkleRoots();
+
+//fetch global variables
+//fetchContractDetails();
+
+//get structure data 
+//fetchBatchDetails(batchId);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*
+//sample for present merkle root logic
+
+unction calculateMerkleRoot(hashes) {
+  // If the array has an odd length, add "test" as the last leaf
+  if (hashes.length % 2 !== 0) {
+    hashes.push(sha256("test"));
+  }
+
+  // Recursive helper function to compute Merkle root
+  function computeMerkleRoot(layer) {
+    if (layer.length === 1) {
+      return layer[0]; // Root found
+    }
+
+    const nextLayer = [];
+    for (let i = 0; i < layer.length; i += 2) {
+      // Combine pairs of hashes, left and right
+      const left = layer[i];
+      const right = layer[i + 1];
+      nextLayer.push(sha256(left + right));
+    }
+
+    // Recursive call with the next layer
+    return computeMerkleRoot(nextLayer);
+  }
+
+  return computeMerkleRoot(hashes);
+}
+
+// Example usage:
+const leafHashes = ["a", "b", "c", "d"].map(sha256); // Example hashes
+const merkleRoot = calculateMerkleRoot(leafHashes);
+console.log("Merkle Root:", merkleRoot);
+
+*/

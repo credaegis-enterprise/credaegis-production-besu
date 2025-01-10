@@ -46,3 +46,8 @@ Also modify the ABI in interact.js with the new ABI generated in **~artifacts/co
 
 **code the private key to .env file and invoke it to .js later**
 
+**To test follow this steps**
+1) store hashes
+2) gethashesfornextbatch
+3) finaliseBatches
+

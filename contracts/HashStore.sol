@@ -285,11 +285,40 @@ function getContractDetails() public view returns (uint256,uint256,uint256)
 
 
 // Function to fetch batch details by batch ID
-    function getBatchById(uint256 batchId) public view returns (string[] memory,string memory,uint256)
+function getBatchById(uint256 batchId) public view returns (string[] memory,string memory,uint256)
     {
         Batch storage batch = batches[batchId];
         return (batch.hashes, batch.merkleRoot, batch.lastHashIndex);
     }
+
+
+struct HashMerklePair {
+    string hash;
+    string merkleRoot;
+}
+
+// Function to fetch Merkle roots for given hashes
+function getMerkleByHash(string[] memory hashes) public view returns (HashMerklePair[] memory) {
+    uint256 length = hashes.length;
+    HashMerklePair[] memory results = new HashMerklePair[](length);
+    
+    for(uint i=0; i < length; i++)
+    {
+        uint256 batchId = hashToBatchId[hashes[i]];
+        uint256 id = hashToId[hashes[i]];
+        require(id < batches[batchId].hashes.length, "Invalid ID in batch.");
+        require(!batches[batchId].revoked[id], "Hash has been revoked.");
+        string memory Root = batches[batchId].merkleRoot;
+
+         results[i] = HashMerklePair({
+            hash: hashes[i],
+            merkleRoot: Root
+        });
+
+    }
+    return results;
+}
+
 
 }
 

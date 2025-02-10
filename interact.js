@@ -4,7 +4,7 @@ const { ethers } = require('ethers');
 const provider = new ethers.providers.JsonRpcProvider("http://localhost:8001");  // Use your actual QBFT node URL
 
 // Define the contract address (hardcoded)
-const contractAddress = '0xe2d92c37Fd34f94e4633371db85a91D16c2dc3F5';  // Replace with your actual deployed contract address
+const contractAddress = '0xE470B4AF2C0dbFa6E834586B364a91e79ad6BcBf';  // Replace with your actual deployed contract address
 
 // Define the ABI of the contract with updated functions and events
 const contractABI = [
@@ -167,6 +167,37 @@ const contractABI = [
         "internalType": "string[]",
         "name": "",
         "type": "string[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "string[]",
+        "name": "hashes",
+        "type": "string[]"
+      }
+    ],
+    "name": "getMerkleByHash",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "string",
+            "name": "hash",
+            "type": "string"
+          },
+          {
+            "internalType": "string",
+            "name": "merkleRoot",
+            "type": "string"
+          }
+        ],
+        "internalType": "struct HashStore.HashMerklePair[]",
+        "name": "",
+        "type": "tuple[]"
       }
     ],
     "stateMutability": "view",
@@ -436,6 +467,26 @@ async function fetchMerkleRoots() {
   }
 }
 
+//Function to get merkle root by giving hashes
+async function getMerkleByHash(hashes) {
+  try {
+      // Call the smart contract function
+      const results = await contract.getMerkleByHash(hashes);
+
+      // Convert the result into a readable array of objects
+      const formattedResult =  results.map(result => ({
+          hash: result.hash,
+          merkleRoot: result.merkleRoot
+      }));
+      
+      console.log(formattedResult);
+  } catch (error) {
+      console.error("Error fetching Merkle roots:", error);
+      
+  }
+}
+
+
 
 
 
@@ -447,8 +498,6 @@ async function fetchMerkleRoots() {
 
 async function fetchContractDetails() {
   try {
-      // Connect to the contract
-      //const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, wallet);
 
       // Call the Solidity function
       const [batchHashCount, currentBatch, lastHashIndex] = await contract.getContractDetails();
@@ -504,7 +553,7 @@ const hashes = [
 ];
 const hashesToRevoke = ['0x5c6ee2f9e5d536b56333a9f58f91c9f66f1f19cfa0a51c811'];
 
-const merkleroot = "0x15450";
+const merkleroot = "0x15451";
 
 const batchId = 1; // Replace with desired batch ID
 
@@ -512,7 +561,7 @@ const batchId = 1; // Replace with desired batch ID
 
 
 // Uncomment to store hashes
-storeHashes(hashes);
+//storeHashes(hashes);
 
 
 // Revoke a batch of hashes
@@ -530,11 +579,14 @@ storeHashes(hashes);
 // To fetch all merkle roots
 //fetchMerkleRoots();
 
-//fetch global variables
+// Fetch global variables
 //fetchContractDetails();
 
-//get structure data 
+// Get structure data 
 //fetchBatchDetails(batchId);
+
+// To fetch merkle root by giving hash
+//getMerkleByHash(hashes);
 
 
 
